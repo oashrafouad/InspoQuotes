@@ -37,16 +37,44 @@ class QuoteTableViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // #warning Incomplete implementation, return the number of rows
-        return quotesToShow.count
+        return quotesToShow.count + 1
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "QuoteCell", for: indexPath)
         
-        cell.textLabel?.text = quotesToShow[indexPath.row]
-        cell.textLabel?.numberOfLines = 0
+        if indexPath.row < quotesToShow.count
+        {
+            cell.textLabel?.text = quotesToShow[indexPath.row]
+            cell.textLabel?.numberOfLines = 0
+        }
+        else
+        {
+            cell.textLabel?.text = "Get More Quotes"
+            cell.textLabel?.font = UIFont.boldSystemFont(ofSize: cell.textLabel!.font.pointSize)
+            cell.accessoryType = .disclosureIndicator
+        }
         
         return cell
+    }
+    
+    // MARK: - Table view data source
+
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        if indexPath.row == quotesToShow.count
+        {
+            tableView.cellForRow(at: indexPath)?.selectionStyle = .default // To make only this cell pressable while the others not
+
+            buyPremiumQuotes()
+            tableView.deselectRow(at: indexPath, animated: true)
+        }
+    }
+
+    //MARK: - In-app purchase methods
+    
+    func buyPremiumQuotes()
+    {
+        print("selected")
     }
 
     @IBAction func restorePressed(_ sender: UIBarButtonItem) {
