@@ -13,7 +13,7 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     
     @Published private(set) var items = [Product] ()
     let productID = "com.oashrafouad.InspoQuotes.PremiumQuotes"
-    var arePremiumQuotesPurchased = false
+//    var arePremiumQuotesPurchased = false
     
     var quotesToShow = [
         "Our greatest glory is not in never falling, but in rising every time we fall. — Confucius",
@@ -39,9 +39,7 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
         
         print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
         
-        arePremiumQuotesPurchased = UserDefaults.standard.bool(forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
-        
-        if arePremiumQuotesPurchased == true {
+        if arePremiumQuotesPurchased() {
             showPremiumQuotes()
         }
 
@@ -50,11 +48,11 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     // MARK: - Table view data source
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if arePremiumQuotesPurchased == false {
-            return quotesToShow.count + 1
+        if arePremiumQuotesPurchased() {
+            return quotesToShow.count
         }
         else {
-            return quotesToShow.count
+            return quotesToShow.count + 1
         }
     }
     
@@ -74,7 +72,7 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
         }
         
         // To clear bold font on "Get More Quotes"
-        if arePremiumQuotesPurchased == true {
+        if arePremiumQuotesPurchased() {
             cell.textLabel?.font = .systemFont(ofSize: cell.textLabel!.font.pointSize)
         }
         
@@ -108,21 +106,22 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
         else
         {
             print("user can't make payments")
+            let alert = UIAlertController(title: "Sorry!", message: "You're restricted from making payments.", preferredStyle: .alert)
+            let action = UIAlertAction(title: "OK", style: .default)
+            alert.addAction(action)
+            present(alert, animated: true)
         }
     }
     
+    func arePremiumQuotesPurchased() -> Bool {
+        return UserDefaults.standard.bool(forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
+    }
     
     func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         for transaction in transactions {
             switch transaction.transactionState {
-            case .purchasing:
-                print("transaction purchasing")
-                
             case .purchased:
                 print("transaction successful")
-                
-                UserDefaults.standard.set(true, forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
-                arePremiumQuotesPurchased = UserDefaults.standard.bool(forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
                 
                 showPremiumQuotes()
                 
@@ -136,8 +135,9 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
             case .restored:
                 print("transaction restored")
                 
-            case .deferred:
-                print("transaction deferred")
+                showPremiumQuotes()
+                
+                SKPaymentQueue.default().finishTransaction(transaction)
                 
             default:
                 print("unknown status")
@@ -146,13 +146,14 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     }
     
     func showPremiumQuotes() {
+        UserDefaults.standard.set(true, forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
+        
         quotesToShow.append(contentsOf: premiumQuotes)
-        print(quotesToShow.count)
         tableView.reloadData()
     }
     
-    
     @IBAction func restorePressed(_ sender: UIBarButtonItem) {
+        SKPaymentQueue.default().restoreCompletedTransactions()
         
     }
 }
