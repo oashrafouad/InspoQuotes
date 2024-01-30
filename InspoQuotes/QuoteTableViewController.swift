@@ -137,6 +137,8 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
                 
                 showPremiumQuotes()
                 
+                navigationItem.setRightBarButton(nil, animated: true)
+                
                 SKPaymentQueue.default().finishTransaction(transaction)
                 
             default:
