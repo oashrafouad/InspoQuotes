@@ -13,7 +13,6 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     
     @Published private(set) var items = [Product] ()
     let productID = "com.oashrafouad.InspoQuotes.PremiumQuotes"
-    let productIDs = ["com.oashrafouad.InspoQuotes.PremiumQuotes"]
     var arePremiumQuotesPurchased = false
     
     var quotesToShow = [
@@ -36,9 +35,16 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        print(quotesToShow.count)
         SKPaymentQueue.default().add(self)
         
+        print(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last! as String)
+        
+        arePremiumQuotesPurchased = UserDefaults.standard.bool(forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
+        
+        if arePremiumQuotesPurchased == true {
+            showPremiumQuotes()
+        }
+
     }
     
     // MARK: - Table view data source
@@ -92,7 +98,6 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
     
     func buyPremiumQuotes()
     {
-        
         if SKPaymentQueue.canMakePayments()
         {
             print("user can make payments")
@@ -106,13 +111,6 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
         }
     }
     
-    func showPremiumQuotes() {
-        arePremiumQuotesPurchased = true
-        quotesToShow.append(contentsOf: premiumQuotes)
-        print(quotesToShow.count)
-        tableView.reloadData()
-        
-    }
     
     func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
         for transaction in transactions {
@@ -122,7 +120,12 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
                 
             case .purchased:
                 print("transaction successful")
+                
+                UserDefaults.standard.set(true, forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
+                arePremiumQuotesPurchased = UserDefaults.standard.bool(forKey: "com.oashrafouad.InspoQuotes.PremiumQuotes")
+                
                 showPremiumQuotes()
+                
                 SKPaymentQueue.default().finishTransaction(transaction)
                 
             case .failed:
@@ -140,6 +143,12 @@ class QuoteTableViewController: UITableViewController, SKPaymentTransactionObser
                 print("unknown status")
             }
         }
+    }
+    
+    func showPremiumQuotes() {
+        quotesToShow.append(contentsOf: premiumQuotes)
+        print(quotesToShow.count)
+        tableView.reloadData()
     }
     
     
