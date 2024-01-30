@@ -7,8 +7,14 @@
 //
 
 import UIKit
+import StoreKit
 
-class QuoteTableViewController: UITableViewController {
+class QuoteTableViewController: UITableViewController, SKPaymentTransactionObserver {
+    
+    @Published private(set) var items = [Product] ()
+    let productID = "com.oashrafouad.InspoQuotes.PremiumQuotes"
+    let productIDs = ["com.oashrafouad.InspoQuotes.PremiumQuotes"]
+    var arePremiumQuotesPurchased = false
     
     var quotesToShow = [
         "Our greatest glory is not in never falling, but in rising every time we fall. — Confucius",
@@ -27,19 +33,25 @@ class QuoteTableViewController: UITableViewController {
         "Your true success in life begins only when you make the commitment to become excellent at what you do. — Brian Tracy",
         "Believe in yourself, take on your challenges, dig deep within yourself to conquer fears. Never let anyone bring you down. You got to keep going. – Chantal Sutherland"
     ]
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        print(quotesToShow.count)
+        SKPaymentQueue.default().add(self)
         
     }
-
+    
     // MARK: - Table view data source
-
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
-        return quotesToShow.count + 1
+        if arePremiumQuotesPurchased == false {
+            return quotesToShow.count + 1
+        }
+        else {
+            return quotesToShow.count
+        }
     }
-
+    
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "QuoteCell", for: indexPath)
         
@@ -51,32 +63,86 @@ class QuoteTableViewController: UITableViewController {
         else
         {
             cell.textLabel?.text = "Get More Quotes"
-            cell.textLabel?.font = UIFont.boldSystemFont(ofSize: cell.textLabel!.font.pointSize)
+            cell.textLabel?.font = .boldSystemFont(ofSize: cell.textLabel!.font.pointSize)
             cell.accessoryType = .disclosureIndicator
+        }
+        
+        // To clear bold font on "Get More Quotes"
+        if arePremiumQuotesPurchased == true {
+            cell.textLabel?.font = .systemFont(ofSize: cell.textLabel!.font.pointSize)
         }
         
         return cell
     }
     
     // MARK: - Table view data source
-
+    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.row == quotesToShow.count
         {
             tableView.cellForRow(at: indexPath)?.selectionStyle = .default // To make only this cell pressable while the others not
-
+            
             buyPremiumQuotes()
+            
             tableView.deselectRow(at: indexPath, animated: true)
         }
     }
-
+    
     //MARK: - In-app purchase methods
     
     func buyPremiumQuotes()
     {
-        print("selected")
+        
+        if SKPaymentQueue.canMakePayments()
+        {
+            print("user can make payments")
+            let paymentRequest = SKMutablePayment()
+            paymentRequest.productIdentifier = productID
+            SKPaymentQueue.default().add(paymentRequest)
+        }
+        else
+        {
+            print("user can't make payments")
+        }
     }
-
+    
+    func showPremiumQuotes() {
+        arePremiumQuotesPurchased = true
+        quotesToShow.append(contentsOf: premiumQuotes)
+        print(quotesToShow.count)
+        tableView.reloadData()
+        
+    }
+    
+    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        for transaction in transactions {
+            switch transaction.transactionState {
+            case .purchasing:
+                print("transaction purchasing")
+                
+            case .purchased:
+                print("transaction successful")
+                showPremiumQuotes()
+                SKPaymentQueue.default().finishTransaction(transaction)
+                
+            case .failed:
+                if let error = transaction.error {
+                    print("transaction failed, error: \(error.localizedDescription)")
+                }
+                
+            case .restored:
+                print("transaction restored")
+                
+            case .deferred:
+                print("transaction deferred")
+                
+            default:
+                print("unknown status")
+            }
+        }
+    }
+    
+    
     @IBAction func restorePressed(_ sender: UIBarButtonItem) {
         
     }
